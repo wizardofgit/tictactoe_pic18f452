@@ -11,14 +11,10 @@
 // CONFIG7H
 #pragma config EBTRB = OFF      // Boot Block Table Read Protection bit (Boot Block (000000-0001FFh) not protected from Table Reads executed in other blocks)
 
-// #pragma config statements should precede project file includes.
-// Use project enums instead of #define for ON and OFF.
-
+// disable watchdogtimer
 #pragma config WDT = 0
 
-
 #include <xc.h>
-// #include <htc.h>
 
 // set bit (takes pointer to a PORT and bit number)
 void set_bit(volatile unsigned char *reg, unsigned char bit_number) {
@@ -30,7 +26,7 @@ void clear_bit(volatile unsigned char *reg, unsigned char bit_number) {
     *reg &= ~(1 << bit_number); // Clear the bit at the specified position
 }
 
-// chech if bit is turned on on PORTC
+// check if bit is turned on on PORTC
 int is_bit_on(unsigned char bit_number) {
     // Mask to isolate the specific bit
     unsigned char mask = 1 << bit_number;
@@ -60,7 +56,7 @@ void wait(int x) {
     return;
 }
 
-// function for drawing the game staus
+// function for drawing the game status
 void draw_grid(short grid[3][3]) {
     // check every cell for coresponding values
     if(grid[0][0]) {
@@ -118,7 +114,6 @@ void draw_grid(short grid[3][3]) {
             set_bit(&PORTC, 6);
     }
     
-        
     return;
 }
 
@@ -154,18 +149,7 @@ short check_if_won(short grid[3][3]) {
     return 3;
 }
 
-void reset_portc(void) {
-    // Mask to clear bits 3-7
-    unsigned char mask = 0x07; // 00000111
-    
-    // Clear bits 3-7 on PORTC
-    PORTC &= ~mask;
-    
-    return;
-}
-
 void reset_screen(void) {
-    //reset_portc();
     PORTC = 0;
     PORTD = 0;
     PORTA = 0;
@@ -187,7 +171,7 @@ void display_score(short short1, short short2) {
     PORTB &= ~mask2;
     PORTB |= (short2 << 4) & mask2; // Shift short2 by 4 bits to the left to align with bits 4-7
     
-    return ;
+    return;
 }
 
 void main(void) {
@@ -257,12 +241,10 @@ void main(void) {
         draw_grid(grid);
         display_score(score_player_1, score_player_2);
         
-        
         // indicate which player plays now
         PORTE = player_turn;
-        
-        
-        // flag for tracking if player chose valid cell
+       
+        // flag for tracking if player chose a valid cell
         short position_chosen = 1;
         
         while(position_chosen) {
@@ -314,5 +296,6 @@ void main(void) {
             }
         }
     }
+   
     return;
 }
