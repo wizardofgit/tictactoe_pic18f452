@@ -20,9 +20,24 @@
 #include <xc.h>
 // #include <htc.h>
 
-// set bit (takes pointer to the PORT and bit number)
+// set bit (takes pointer to a PORT and bit number)
 void set_bit(volatile unsigned char *reg, unsigned char bit_number) {
     *reg |= (1 << bit_number); // Set the bit at the specified position
+}
+
+// clear bit (takes pointer to a PORT and bit number)
+void clear_bit(volatile unsigned char *reg, unsigned char bit_number) {
+    *reg &= ~(1 << bit_number); // Clear the bit at the specified position
+}
+
+// chech if bit is turned on on PORTC
+int is_bit_on(unsigned char bit_number) {
+    // Mask to isolate the specific bit
+    unsigned char mask = 1 << bit_number;
+    
+    // Perform a bitwise AND operation with PORTC and the mask
+    // If the result is non-zero, the bit is turned on
+    return (PORTC & mask) != 0;
 }
 
 // display temporarily chosen x or y value on PORTB
@@ -113,13 +128,21 @@ short check_if_won(short grid[3][3]) {
     for(short i = 0; i < 3; i++)
         for(short j = 0; j < 3; j++)
             if(grid[i][j] != 0) {
+                // vertical line
                 if(grid[i+1][j] == grid[i][j] && grid[i+2][j] == grid[i][j])
                     return grid[i][j];
+                // horizontal line
                 if(grid[i][j+1] == grid[i][j] && grid[i][j+2] == grid[i][j])
                     return grid[i][j];
-                if(grid[i+1][j+1] == grid[i][j] && grid[i+2][j+2] == grid[i][j])
-                    return grid[i][j];
             }
+    
+    // check for diagonals
+    // right diagonal ("backslash")
+    if(grid[0][0] == grid[1][1] && grid[1][1] == grid[2][2])
+        return grid[0][0];
+    // left diagonal ("forward slash")
+    if(grid[2][0] == grid[1][1] && grid[1][1] == grid[0][2])
+       return grid[2][0];
     
     // check if tie
     for(short i = 0; i < 3; i++)
@@ -131,7 +154,18 @@ short check_if_won(short grid[3][3]) {
     return 3;
 }
 
+void reset_portc(void) {
+    // Mask to clear bits 3-7
+    unsigned char mask = 0x07; // 00000111
+    
+    // Clear bits 3-7 on PORTC
+    PORTC &= ~mask;
+    
+    return;
+}
+
 void reset_screen(void) {
+    //reset_portc();
     PORTC = 0;
     PORTD = 0;
     PORTA = 0;
@@ -152,6 +186,8 @@ void display_score(short short1, short short2) {
     // Clear bits 4-7 of PORTB and then set them according to short2
     PORTB &= ~mask2;
     PORTB |= (short2 << 4) & mask2; // Shift short2 by 4 bits to the left to align with bits 4-7
+    
+    return ;
 }
 
 void main(void) {
@@ -236,44 +272,32 @@ void main(void) {
 
             // choose the row
             while(x < 0) {
-                wait(250);
-                if(PORTC != 0) {
-                    if(PORTC == 0b00000001)
-                        x = 0;
-                    else if(PORTC == 0b00000010)
-                        x = 1;
-                    else if(PORTC == 0b00000100)
-                        x = 2;            
-                }
-
-                while(PORTC != 0) {
-
-                }
+                wait(500);
+                if(is_bit_on(0))
+                    x = 0;
+                else if(is_bit_on(1))
+                    x = 1;
+                else if(is_bit_on(2))
+                    x = 2; 
             }
 
             // for debugging purposes
             debug_position(x);
-
-            wait(500);
+            
+            wait(1000);
 
             while(y < 0) {
-                wait(250);
-                if(PORTC != 0) {
-                    if(PORTC == 0b00000001)
-                        y = 0;
-                    else if(PORTC == 0b00000010)
-                        y = 1;
-                    else if(PORTC == 0b00000100)
-                        y = 2;            
-                }
-
-                while(PORTC != 0) {
-
-                }
+                wait(500);
+                if(is_bit_on(0))
+                    y = 0;
+                else if(is_bit_on(1))
+                    y = 1;
+                else if(is_bit_on(2))
+                    y = 2;            
             }
             // for debugging purposes
             debug_position(y);
-
+            
             wait(1000);
 
             // if cell clear, overwrite
